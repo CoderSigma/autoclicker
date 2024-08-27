@@ -135,8 +135,12 @@ def open_instructions(event=None):
 def on_footer_click(event):
     webbrowser.open("https://github.com/CoderSigma")
 
+# Assuming this is within a function or class method where the update is being called
 def check_for_updates():
-    update.download_and_replace()  # Call the update function from update.py
+    try:
+        update.check_for_update()  # Call the function correctly
+    except Exception as e:
+        print(f"Error during update check: {e}") # Call the update function from update.py
 
 def dark_mode():
     global bg_color, fg_color, btn_color
@@ -195,7 +199,7 @@ root.config(menu=menu_bar)
 
 # File Menu
 file_menu = tk.Menu(menu_bar, tearoff=0)
-menu_bar.add_cascade(label="File", menu=file_menu)
+menu_bar.add_cascade(label="mamamo", menu=file_menu)
 file_menu.add_command(label="Open", command=lambda: messagebox.showinfo("File", "Open File"))
 file_menu.add_command(label="Save", command=lambda: messagebox.showinfo("File", "Save File"))
 file_menu.add_separator()
