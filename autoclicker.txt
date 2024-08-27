@@ -224,7 +224,7 @@ menu_bar.add_cascade(label="Update", menu=update_menu)
 update_menu.add_command(label="Check for Updates", command=check_for_updates)
 
 # Title Label at the top
-title_label = tk.Label(root, text="Auto Clicker For My Baby", font=("Helvetica", 16, "bold"), fg="darkred", bg=bg_color)
+title_label = tk.Label(root, text="Auto aby", font=("Helvetica", 16, "bold"), fg="darkred", bg=bg_color)
 title_label.pack(pady=10)
 
 # Instructions Button
