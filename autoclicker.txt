@@ -1,0 +1,338 @@
+import time
+import tkinter as tk
+from tkinter import ttk, messagebox
+import webbrowser
+import threading
+import requests
+import os
+import sys
+from pynput.mouse import Button, Controller as MouseController
+from pynput import keyboard
+
+# Global variables
+clicking = False
+click_interval = 0.1
+click_count = 0
+click_mode = "Continuous"
+end_time = None
+click_limit = float('inf')
+click_thread = None
+stop_event = threading.Event()
+
+mouse = MouseController()
+
+def on_press(key):
+    global clicking, click_thread
+    if key == keyboard.Key.f8:
+        if clicking:
+            stop_clicker()
+        else:
+            start_clicker()
+
+def update_countdown():
+    if click_mode == "Timed" and end_time is not None:
+        remaining_time = max(0, end_time - time.time())
+        countdown_label.config(text=f"Time Remaining: {int(remaining_time)}s")
+        if remaining_time > 0:
+            root.after(1000, update_countdown)
+        else:
+            stop_clicker()
+            messagebox.showinfo("Done", "Timer has ended!")
+
+def auto_click():
+    global click_count
+    try:
+        while clicking and not stop_event.is_set():
+            if click_mode == "Timed" and end_time is not None and time.time() >= end_time:
+                stop_clicker()
+                return
+
+            if click_mode == "Limit" and click_count >= click_limit:
+                stop_clicker()
+                messagebox.showinfo("Done", "Click limit reached!")
+                return
+
+            mouse.click(Button.left)
+            click_count += 1
+            update_status()
+            update_progress_bar()
+            time.sleep(click_interval)
+    except Exception as e:
+        messagebox.showerror("Error", f"An error occurred: {e}")
+        stop_clicker()
+
+def update_status():
+    start_label.config(text="Start: Running" if clicking else "Start: Not Running")
+    stop_label.config(text=f"Stop: Total Clicks: {click_count}")
+
+def update_progress_bar():
+    if click_mode == "Limit":
+        progress_bar['value'] = min((click_count / click_limit) * 100, 100)
+        root.update_idletasks()
+    else:
+        progress_bar['value'] = 0
+
+def set_click_speed(event):
+    global click_interval
+    click_interval = speed_var.get() / 1000.0
+
+def start_clicker():
+    global clicking, end_time, click_limit, click_count, click_thread
+
+    if not clicking:
+        click_count = 0
+
+        if click_mode == "Timed":
+            try:
+                minutes = int(timer_duration_var.get())
+                timer_duration = minutes * 60
+                end_time = time.time() + timer_duration
+                update_countdown()
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number for the timer.")
+                return
+        elif click_mode == "Limit":
+            try:
+                click_limit = int(custom_limit_var.get()) if click_limit_var.get() == "Custom" else int(click_limit_var.get())
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number for the click limit.")
+                return
+        else:
+            end_time = None
+            click_limit = float('inf')
+
+        clicking = True
+        stop_event.clear()
+        update_status()
+        click_thread = threading.Thread(target=auto_click)
+        click_thread.start()
+
+def stop_clicker():
+    global clicking
+    clicking = False
+    stop_event.set()
+    update_status()
+
+def mode_changed(event):
+    global click_mode
+    click_mode = mode_var.get()
+    if click_mode == "Timed":
+        timer_frame.pack(pady=10)
+        limit_frame.pack_forget()
+    elif click_mode == "Limit":
+        timer_frame.pack_forget()
+        limit_frame.pack(pady=10)
+    else:
+        timer_frame.pack_forget()
+        limit_frame.pack_forget()
+
+def limit_changed(event):
+    custom_limit_frame.pack(pady=10) if click_limit_var.get() == "Custom" else custom_limit_frame.pack_forget()
+
+def open_instructions(event=None):
+    webbrowser.open("http://usernames.free.nf/ac.txt")
+
+def on_footer_click(event):
+    webbrowser.open("https://github.com/CoderSigma")
+
+def update_choices():
+    local_script_path = sys.argv[0]  # Path to the current script
+    update_url = "http://usernames.free.nf/auto.txt"
+    
+    try:
+        # Download the remote script
+        response = requests.get(update_url)
+        response.raise_for_status()
+        remote_script = response.text
+
+        # Read the local script
+        with open(local_script_path, 'r') as file:
+            local_script = file.read()
+
+        if local_script != remote_script:
+            # Show update prompt
+            response = messagebox.askyesno("Update Available", "An update is available. Do you want to install it now?")
+            if response:
+                # Save the new script
+                with open(local_script_path, 'w') as file:
+                    file.write(remote_script)
+                messagebox.showinfo("Update Installed", "Update installed successfully. Restarting the application.")
+                # Restart the application
+                os.execv(sys.executable, ['python'] + sys.argv)
+            else:
+                messagebox.showinfo("Update Skipped", "Update skipped. You can check for updates later.")
+        else:
+            messagebox.showinfo("Up-to-Date", "Your script is already up-to-date.")
+    
+    except requests.RequestException as e:
+        messagebox.showerror("Update Error", f"Failed to check for updates: {e}")
+
+def dark_mode():
+    global bg_color, fg_color, btn_color
+    bg_color = "#1e1e1e"
+    fg_color = "#e0e0e0"
+    btn_color = "#333333"
+    update_theme()
+
+def light_mode():
+    global bg_color, fg_color, btn_color
+    bg_color = "#f0f0f0"
+    fg_color = "#000000"
+    btn_color = "#cccccc"
+    update_theme()
+
+def reset_clicks():
+    global click_count
+    click_count = 0
+    update_status()
+    update_progress_bar()
+
+def update_theme():
+    root.configure(bg=bg_color)
+    title_label.configure(bg=bg_color, fg=fg_color)
+    instructions_button.configure(bg=btn_color, fg=fg_color)
+    start_label.configure(bg=bg_color, fg=fg_color)
+    stop_label.configure(bg=bg_color, fg=fg_color)
+    stop_button.configure(bg=btn_color, fg=fg_color)
+    countdown_label.configure(bg=bg_color, fg=fg_color)
+    status_bar_label.configure(bg=bg_color, fg=fg_color)
+    status_bar_frame.configure(bg=bg_color)
+    limit_label.configure(bg=bg_color, fg=fg_color)
+    custom_limit_label.configure(bg=bg_color, fg=fg_color)
+    root.update()
+
+def show_status_bar():
+    status_bar_frame.pack(pady=10)
+
+def hide_status_bar():
+    status_bar_frame.pack_forget()
+
+# Set up GUI
+root = tk.Tk()
+root.title("Auto Clicker")
+
+# Set initial theme colors
+bg_color = "#2e2e2e"
+fg_color = "#ffffff"
+btn_color = "#4d4d4d"
+
+root.configure(bg=bg_color)
+
+# Create Menu Bar
+menu_bar = tk.Menu(root)
+root.config(menu=menu_bar)
+
+# File Menu
+file_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="File", menu=file_menu)
+file_menu.add_command(label="Open", command=lambda: messagebox.showinfo("File", "Open File"))
+file_menu.add_command(label="Save", command=lambda: messagebox.showinfo("File", "Save File"))
+file_menu.add_separator()
+file_menu.add_command(label="Exit", command=root.quit)
+
+# Edit Menu
+edit_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Edit", menu=edit_menu)
+edit_menu.add_command(label="Dark Mode", command=dark_mode)
+edit_menu.add_command(label="Light Mode", command=light_mode)
+edit_menu.add_command(label="Reset Total Clicks", command=reset_clicks)
+
+# View Menu
+view_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="View", menu=view_menu)
+view_menu.add_command(label="Show Status Bar", command=show_status_bar)
+view_menu.add_command(label="Hide Status Bar", command=hide_status_bar)
+
+# Update Menu
+update_menu = tk.Menu(menu_bar, tearoff=0)
+menu_bar.add_cascade(label="Update", menu=update_menu)
+update_menu.add_command(label="Check for Updates", command=update_choices)
+
+# Title Label at the top
+title_label = tk.Label(root, text="AUTOCLICKER FOR MY BABY GIRL <3", font=("Helvetica", 16, "bold"), fg="darkred", bg=bg_color)
+title_label.pack(pady=10)
+
+# Instructions Button
+instructions_button = tk.Button(root, text="Instructions", command=open_instructions, bg=btn_color, fg=fg_color)
+instructions_button.pack(pady=5)
+
+# Dropdown for mode selection
+mode_var = tk.StringVar(value="Continuous")
+mode_dropdown = ttk.Combobox(root, textvariable=mode_var, values=["Continuous", "Timed", "Limit"], state="readonly")
+mode_dropdown.pack(pady=5)
+mode_dropdown.bind("<<ComboboxSelected>>", mode_changed)
+
+# Timer duration dropdown (visible only for "Timed" mode)
+duration_options = [str(i) for i in range(1, 61)]
+timer_duration_var = tk.StringVar(value="1")
+duration_dropdown = ttk.Combobox(root, textvariable=timer_duration_var, values=duration_options, state="readonly")
+duration_dropdown.pack(pady=10)
+
+# Click limit dropdown and entry (hidden initially)
+limit_frame = tk.Frame(root, bg=bg_color)
+limit_label = tk.Label(limit_frame, text="Click Limit:", fg=fg_color, bg=bg_color)
+limit_label.pack(side=tk.LEFT, padx=5)
+
+# Dropdown for click limits
+limit_options = [str(i) for i in range(1, 501)] + ["Custom"]
+click_limit_var = tk.StringVar(value="100")
+limit_dropdown = ttk.Combobox(limit_frame, textvariable=click_limit_var, values=limit_options, state="readonly")
+limit_dropdown.pack(side=tk.LEFT, padx=5)
+limit_dropdown.bind("<<ComboboxSelected>>", limit_changed)
+
+limit_frame.pack_forget()
+
+# Custom limit entry (hidden initially)
+custom_limit_frame = tk.Frame(root, bg=bg_color)
+custom_limit_label = tk.Label(custom_limit_frame, text="Custom Limit:", fg=fg_color, bg=bg_color)
+custom_limit_label.pack(side=tk.LEFT, padx=5)
+custom_limit_var = tk.StringVar(value="100")
+custom_limit_entry = tk.Entry(custom_limit_frame, textvariable=custom_limit_var, width=5)
+custom_limit_entry.pack(side=tk.LEFT, padx=5)
+custom_limit_frame.pack_forget()
+
+# Speed dropdown
+speed_var = tk.IntVar(value=100)
+speed_label = tk.Label(root, text="Click Interval", font=("Helvetica", 12), fg=fg_color, bg=bg_color)
+speed_label.pack(pady=5)
+speed_dropdown = ttk.Combobox(root, textvariable=speed_var, values=list(range(45, 301, 15)), state="readonly")
+speed_dropdown.pack(pady=10)
+speed_dropdown.bind("<<ComboboxSelected>>", set_click_speed)
+
+# Countdown label
+countdown_label = tk.Label(root, text="Time Remaining: 0s", font=("Helvetica", 12), fg=fg_color, bg=bg_color)
+countdown_label.pack(pady=5)
+
+# Start/Stop Labels
+start_label = tk.Label(root, text="Start: Not Running", fg=fg_color, bg=bg_color)
+start_label.pack(pady=5)
+stop_label = tk.Label(root, text="Stop: Total Clicks: 0", fg=fg_color, bg=bg_color)
+stop_label.pack(pady=5)
+
+# Start/Stop Buttons
+start_button = tk.Button(root, text="Start", command=start_clicker, bg=btn_color, fg=fg_color)
+start_button.pack(pady=5)
+stop_button = tk.Button(root, text="Stop", command=stop_clicker, bg=btn_color, fg=fg_color)
+stop_button.pack(pady=5)
+
+# Progress Bar
+progress_bar = ttk.Progressbar(root, orient="horizontal", length=300, mode="determinate")
+progress_bar.pack(pady=10)
+
+# Status Bar Frame
+status_bar_frame = tk.Frame(root, bg=bg_color)
+status_bar_label = tk.Label(status_bar_frame, text="Status Bar", fg=fg_color, bg=bg_color)
+status_bar_label.pack(side=tk.LEFT)
+status_bar_frame.pack_forget()
+
+# Version and Copyright Label at the bottom
+footer_label = tk.Label(root, text="Version 1.0.16 | © CoderSigma", font=("Helvetica", 10), fg="gray", cursor="hand2", bg=bg_color)
+footer_label.pack(side=tk.BOTTOM, pady=10)
+footer_label.bind("<Button-1>", on_footer_click)
+
+# Initialize keyboard listener
+keyboard_listener = keyboard.Listener(on_press=on_press)
+keyboard_listener.start()
+
+# Start the GUI event loop
+root.mainloop()
