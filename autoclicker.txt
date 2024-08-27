@@ -5,6 +5,7 @@ import threading
 import requests
 import os
 import sys
+import time
 from pynput.mouse import Button, Controller as MouseController
 from pynput import keyboard
 import update  # Import the update module
@@ -117,10 +118,10 @@ def mode_changed(event):
     global click_mode
     click_mode = mode_var.get()
     if click_mode == "Timed":
-        timer_frame.pack(pady=10)
+        limit_frame.pack(pady=10)
         limit_frame.pack_forget()
     elif click_mode == "Limit":
-        timer_frame.pack_forget()
+        limit_frame.pack_forget()
         limit_frame.pack(pady=10)
     else:
         timer_frame.pack_forget()
@@ -135,12 +136,11 @@ def open_instructions(event=None):
 def on_footer_click(event):
     webbrowser.open("https://github.com/CoderSigma")
 
-# Assuming this is within a function or class method where the update is being called
 def check_for_updates():
     try:
-        update.check_for_update()  # Call the function correctly
+        update.check_for_update()  # Call the function correctly from update.py
     except Exception as e:
-        print(f"Error during update check: {e}") # Call the update function from update.py
+        messagebox.showerror("Update Error", f"Error during update check: {e}")
 
 def dark_mode():
     global bg_color, fg_color, btn_color
@@ -218,7 +218,7 @@ menu_bar.add_cascade(label="View", menu=view_menu)
 view_menu.add_command(label="Show Status Bar", command=show_status_bar)
 view_menu.add_command(label="Hide Status Bar", command=hide_status_bar)
 
-# Update Button in Menu
+# Update Menu
 update_menu = tk.Menu(menu_bar, tearoff=0)
 menu_bar.add_cascade(label="Update", menu=update_menu)
 update_menu.add_command(label="Check for Updates", command=check_for_updates)
@@ -245,7 +245,7 @@ duration_dropdown.pack(pady=10)
 
 # Click limit dropdown and entry (hidden initially)
 limit_frame = tk.Frame(root, bg=bg_color)
-limit_label = tk.Label(limit_frame, text="Click Limit:", fg=fg_color, bg=bg_color)
+limit_label = tk.Label(limit_frame, text="Limit:", fg=fg_color, bg=bg_color)
 limit_label.pack(side=tk.LEFT, padx=5)
 
 # Dropdown for click limits
