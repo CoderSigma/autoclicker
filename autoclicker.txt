@@ -224,7 +224,7 @@ menu_bar.add_cascade(label="Update", menu=update_menu)
 update_menu.add_command(label="Check for Updates", command=check_for_updates)
 
 # Title Label at the top
-title_label = tk.Label(root, text="Auto Clickersssss foh my bb<3", font=("Helvetica", 16, "bold"), fg="darkred", bg=bg_color)
+title_label = tk.Label(root, text="Auto Clicker for my baby girl.", font=("Helvetica", 16, "bold"), fg="darkred", bg=bg_color)
 title_label.pack(pady=10)
 
 # Instructions Button
@@ -301,7 +301,7 @@ status_bar_label.pack(side=tk.LEFT)
 status_bar_frame.pack_forget()
 
 # Version and Copyright Label at the bottom
-footer_label = tk.Label(root, text="Version 1.0.16 | Creds CoderSigma", font=("Helvetica", 10), fg="gray", cursor="hand2", bg=bg_color)
+footer_label = tk.Label(root, text="Version 1.0.46 | Creator: CoderSigma", font=("Helvetica", 10), fg="gray", cursor="hand2", bg=bg_color)
 footer_label.pack(side=tk.BOTTOM, pady=10)
 footer_label.bind("<Button-1>", on_footer_click)
 
