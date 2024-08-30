@@ -301,7 +301,7 @@ status_bar_label.pack(side=tk.LEFT)
 status_bar_frame.pack_forget()
 
 # Version and Copyright Label at the bottom
-footer_label = tk.Label(root, text="Version 1.0.16 | © CoderSigma", font=("Helvetica", 10), fg="gray", cursor="hand2", bg=bg_color)
+footer_label = tk.Label(root, text="Version 1.0.16 | Creds CoderSigma", font=("Helvetica", 10), fg="gray", cursor="hand2", bg=bg_color)
 footer_label.pack(side=tk.BOTTOM, pady=10)
 footer_label.bind("<Button-1>", on_footer_click)
 
